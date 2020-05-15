@@ -1,0 +1,31 @@
+# FROM arm64v8/ubuntu:16.04
+# SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+# ENV \
+#   PATH="/root/.cargo/bin:${PATH}" \
+#   RUSTUP_HOME="/root/.rustup"
+# # hadolint ignore=DL3008
+# RUN \
+#   export DEBIAN_FRONTEND="noninteractive"; apt-get update -y && \
+#   apt-get install -y --no-install-suggests --no-install-recommends build-essential python curl ca-certificates && \
+#   apt-get clean && rm -rf /var/lib/apt/lists/*
+# RUN \
+#   curl --proto '=https' --tlsv1.2 -sSf "https://sh.rustup.rs" | \
+#   sh -s -- -y --no-modify-path --default-toolchain none --profile=minimal && \
+#   rustup toolchain install 1.43.0 --component clippy rustfmt
+
+# FROM arm64v8/ubuntu:16.04
+FROM multiarch/debian-debootstrap:arm64-stretch
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+ENV \
+  PATH="/root/.cargo/bin:${PATH}" \
+  RUSTUP_HOME="/root/.rustup"
+# hadolint ignore=DL3008
+RUN \
+  export DEBIAN_FRONTEND="noninteractive"; apt-get update -y && \
+  apt-get install -y --no-install-suggests --no-install-recommends build-essential cmake python curl ca-certificates && \
+  # apt-get install -y --no-install-suggests --no-install-recommends gcc binutils binutils-aarch64-linux-gnu build-essential cmake python curl ca-certificates && \
+  apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN \
+  curl --proto '=https' --tlsv1.2 -sSf "https://sh.rustup.rs" | \
+  sh -s -- -y --no-modify-path --default-toolchain none --profile=minimal && \
+  rustup toolchain install 1.43.0
