@@ -1,0 +1,28 @@
+# syntax = docker/dockerfile:experimental
+FROM arm64v8/ubuntu:16.04 as builder
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+ENV \
+  DEBIAN_FRONTEND="noninteractive" \
+  USER="root" \
+  PATH="/root/home/.cargo/bin:$PATH" \
+  RUST_VERSION="1.43.0"
+
+RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+# hadolint ignore=DL3008, SC2215
+RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
+  apt-get update && \
+  apt-get install -y --no-install-suggests --no-install-recommends build-essential cmake python curl ca-certificates git && \
+  curl --proto '=https' --tlsv1.2 -sSf "https://sh.rustup.rs" | \
+  sh -s -- -y --no-modify-path --default-toolchain none --profile=minimal && \
+  rustup toolchain install "${RUST_VERSION}"
+WORKDIR /build
+# hadolint ignore=SC2215
+RUN --mount=type=bind,source=./,target=/build,rw \
+  mkdir -p target/debug &&\
+  ls -al target/debug; \
+  cargo build --locked --all-targets --target aarch64-unknown-linux-gnu && \
+  ls -al target/debug
+FROM scratch as output
+
+COPY --from=builder /build/target/debug/sample .
